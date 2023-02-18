@@ -44,7 +44,7 @@
 
 #### Logical Architecture Design
 ###### Detailed design of the architecture for the technical team
-[Click here] (https://lucid.app/lucidchart/dff2040d-2071-484d-b95a-27494700afd3/edit?view_items=RMay3OCUXK7U&invitationId=inv_dce3b0a8-50ea-4656-9d8e-2e0d0d18cedf)
+[Click here](https://lucid.app/lucidchart/dff2040d-2071-484d-b95a-27494700afd3/edit?view_items=RMay3OCUXK7U&invitationId=inv_dce3b0a8-50ea-4656-9d8e-2e0d0d18cedf)
 
 ![image](https://user-images.githubusercontent.com/66444859/219875538-befd23da-2b71-47fa-871f-116a4ebb9d09.png)
 
