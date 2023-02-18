@@ -2,13 +2,13 @@
 
 ## Required Homework
 
-#### Created IAM User
+#### Created Admin User
 
 ![image](https://user-images.githubusercontent.com/66444859/219874042-2c1cc7dc-5114-4eb2-ba49-1e2d845a5368.png)
 
 #### Generated AWS Credentials
 
-![image](https://user-images.githubusercontent.com/66444859/219874087-d103221c-3f6d-4ae8-b867-2608f523a220.png)
+![image](https://user-images.githubusercontent.com/66444859/219877475-62a17e0d-0c71-412f-b811-cccd5c61e828.png)
 
 #### Created an Organizational Unit
 ![image](https://user-images.githubusercontent.com/66444859/219874205-ad2093c4-1272-452b-b479-c97f555fa8f2.png)
@@ -17,24 +17,26 @@
 ![image](https://user-images.githubusercontent.com/66444859/219874471-61909726-1fff-4b97-9873-a0448e3abffa.png)
 
 
-#### Installed AWS CLI
+#### Installed AWS CLI via GitPod
 ![image](https://user-images.githubusercontent.com/66444859/219874569-4380da5f-5a32-4f6d-b38a-fe27e15d812d.png)
 
-#### Set env variables on GitOps
+#### Set environment variables via GitPod
 ![image](https://user-images.githubusercontent.com/66444859/219874649-c56d3754-20c7-4427-883b-c553e19ffe8a.png)
 
-#### Created AWS Budget and Billing Alarm
+#### Created AWS Budget and Billing Alarm via AWS CLI
 ![image](https://user-images.githubusercontent.com/66444859/219874691-17995d5f-bb51-4206-bd97-e7e888a8b305.png)
 
 ![image](https://user-images.githubusercontent.com/66444859/219874925-8721484b-ac47-4d58-847c-8a708d97d63d.png)
 
-#### Created SNS Topic
+#### Created SNS Topic via AWS CLI
 ![image](https://user-images.githubusercontent.com/66444859/219874989-57955db2-a42d-4c6a-9d86-0613bd879b6d.png)
 
 ##### Subscription was confirmed
-![image](https://user-images.githubusercontent.com/66444859/219875038-34b4642f-cbf5-4b65-ba58-d437b5b798ca.png)
-
 ![image](https://user-images.githubusercontent.com/66444859/219875065-ef411a22-eb8a-4d39-983e-ac53476d6f96.png)
+
+Verify the alarm was created in AWS after confirmation email
+![image](https://user-images.githubusercontent.com/66444859/219876608-98023961-5474-437b-a444-78780b3ff717.png)
+
 
 #### Conceptual Design
 ###### High Level Architecture design for all stakeholders
