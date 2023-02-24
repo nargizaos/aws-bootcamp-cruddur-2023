@@ -20,8 +20,8 @@ COPY . .
 # Set Environment Variables(Env Vars)
 # Inside Container and will remain set when the container is running
 ENV FLASK_ENV=development
-
 EXPOSE ${PORT}
-
+COPY script.py /
+RUN chmod +x /script.py
 # python3 -m flask run --host=0.0.0.0 --port=4567
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567"]
+ENTRYPOINT ["python3", "script.py"]
