@@ -133,7 +133,7 @@ We are in Postgres now:
 
 <img src="https://user-images.githubusercontent.com/66444859/221460616-fdfa02ea-f7bd-4c3d-9c2f-79f945e1171c.png" width=50% >
 
-<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/221460994-3d7b1f95-181a-426b-83b4-e3a5919346e3.png">
+<img width="550" alt="image" src="https://user-images.githubusercontent.com/66444859/221460994-3d7b1f95-181a-426b-83b4-e3a5919346e3.png">
 
 Verified PostgresQL is working by running following commands:
 ```
@@ -141,6 +141,40 @@ Verified PostgresQL is working by running following commands:
 \t
 \l
 ```
-<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/221461187-7095a840-9491-4f51-b60d-cbd944729260.png">
+<img width="550" alt="image" src="https://user-images.githubusercontent.com/66444859/221461187-7095a840-9491-4f51-b60d-cbd944729260.png">
 
+
+#### Ashish's Week 1 - Container Security Considerations
+
+Created a new account on Snyk. Forked [snyk-labs](https://github.com/snyk-labs/docker-goof) repo to test for vulnurabilities.
+
+<img src="https://user-images.githubusercontent.com/66444859/221463608-c0c13013-6e83-4b73-b1d2-5fafe7d67a9a.png" width=55% >
+
+Imported test repo to Snyk
+
+<img src="https://user-images.githubusercontent.com/66444859/221464906-52af0b31-d83d-43a7-b7b2-589cf7c56a29.png" width=55% >
+
+Scanned my repo and Snyk found 287 Critical, 991 High, 1.3k meduim vulnurabilities.
+
+<img src="https://user-images.githubusercontent.com/66444859/221464220-bfa7515d-6944-41df-8c18-6f1a91ec2556.png" width=55% >
+
+Recommendations for vulnerable Dockerfile to upgrade docker image from 10.40 version to 14.21.3.
+
+<img src="https://user-images.githubusercontent.com/66444859/221464459-bc2ef891-1804-4892-8d9a-c44f374303df.png" width=55% >
+
+
+Created a new secret in AWS Secret Manager
+
+<img src="https://user-images.githubusercontent.com/66444859/221465468-8d6e95df-9b52-46e7-8e5d-3dda3bac312e.png" width=60% >
+
+Explored and activated AWS Inspector
+
+<img src="https://user-images.githubusercontent.com/66444859/221466075-e1c83ac0-b742-485f-8a6c-1fa25c601f5a.png" width=55% >
+
+
+
+
+#### Reference:
+
+[Docker Compose Documentation](https://docs.docker.com/compose/gettingstarted/)
 
