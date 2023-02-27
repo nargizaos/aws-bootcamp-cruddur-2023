@@ -172,7 +172,62 @@ Explored and activated AWS Inspector
 <img src="https://user-images.githubusercontent.com/66444859/221466075-e1c83ac0-b742-485f-8a6c-1fa25c601f5a.png" width=55% >
 
 
+### Homework Challenges
 
+#### Run the Dockerfile CMD as an external script
+
+Created a Python script with Dockerfile CMD commands:
+```
+import subprocess
+subprocess.run(["python3", "-m", "flask", "run", "--host=0.0.0.0", "--port=4567"])
+```
+Updated Dockerfile for backend app with an external script:
+```
+FROM python:3.10-slim-buster
+WORKDIR /backend-flask
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+COPY . .
+ENV FLASK_ENV=development
+EXPOSE ${PORT}
+COPY script.py /
+RUN chmod +x /script.py
+ENTRYPOINT ["python3", "script.py"]
+```
+Verified backend app container running and was able to connect from browser.
+
+Placeholder for branch with new Dockerfile
+
+#### Push and tag an image to Dockerhub
+
+Logged in to Docker hub: 
+
+<img src="https://user-images.githubusercontent.com/66444859/221475006-39f3927e-8f52-4469-83df-794c46a66d78.png" width=60% >
+
+Tagged fronend image: 
+
+<img src="https://user-images.githubusercontent.com/66444859/221475140-4b696d52-1394-4354-8909-c31879555b52.png" width=60% >
+
+Pushed frontend-react image to Dockerhub:
+
+<img src="https://user-images.githubusercontent.com/66444859/221469281-a93d80db-c8e6-4bca-a9e6-44f95b0390e0.png" width=55% >
+
+Pushed backend-flask image: 
+
+<img src="https://user-images.githubusercontent.com/66444859/221475290-db774f2f-5ef7-4dae-950f-56dd0862aa78.png" width=55% >
+
+
+Pushed postgres image to Dockerhub:
+
+<img src="https://user-images.githubusercontent.com/66444859/221469011-71f563d4-65c9-4281-a252-9aa079e03fb9.png" width=55% >
+
+Verified dynamodb image was pushed to Dockerhub:
+
+<img src="https://user-images.githubusercontent.com/66444859/221468619-9530a6fe-5ae9-4213-9ca5-eea43b23681f.png" width=55% >
+
+List of images on Dockerhub:
+
+<img src="https://user-images.githubusercontent.com/66444859/221472800-9add97a0-e1ea-4191-bdd8-65099ec81860.png" width=55% >
 
 #### Reference:
 
