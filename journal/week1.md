@@ -229,6 +229,61 @@ List of images on Dockerhub:
 
 <img src="https://user-images.githubusercontent.com/66444859/221472800-9add97a0-e1ea-4191-bdd8-65099ec81860.png" width=55% >
 
+
+#### Learn how to install Docker on your localmachine and get the same containers running outside of Gitpod / Codespaces
+
+Docker Desktop was already installed on my computer. Pulled my **aws-bootcamp-cruddur-2023** repo to my local machine.
+
+<img src="https://user-images.githubusercontent.com/66444859/221481088-55716db2-ce11-48df-ba47-3f04512dd63e.png" width=55% >
+
+Installed **npm** on local machine: 
+```
+brew install node
+node -v
+```
+Installed "nmp" in frontend-react folder:
+```
+cd frontend-react-js
+nmp i
+```
+
+Built images and ran containers with **docker compose up** command:
+
+<img src="https://user-images.githubusercontent.com/66444859/221481437-c36b8878-aa1b-47ad-8c1d-b7636c92e532.png" width=60% >
+
+Backend app on localhost: 
+
+<img src="https://user-images.githubusercontent.com/66444859/221481539-185b1b22-2adc-4c98-9f82-01d743e1f709.png" width=60% >
+
+Frontend app page is blank: 
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/221481631-c47e2dc8-ca12-49fe-aa51-93cd6d4b1ec1.png">
+
+Saw discussion in Discord that someone was running into the same issue and tried to change "origins" value in app.py:
+```
+  resources={r"/api/*": {"origins": "origins"}} >> resources={r"/api/*": {"origins": "*"}}
+```
+Changed origins value:
+
+<img src="https://user-images.githubusercontent.com/66444859/221482138-21298b7f-c136-430b-a2b0-ecc2a179a85d.png" width=60% >
+
+From the discussion in the channel found out that we need to add asecond volume in docker-compose.yaml:
+```
+- /frontend-react-js/node_modules
+```
+
+After adding "node_modules"  in docker-compose.yaml and running "docker compose up --build" got this error: 
+<img src="https://user-images.githubusercontent.com/66444859/221482558-e723dbcf-fc64-4131-ba55-01e384ebb07f.png" width=60% >
+
+Tried running Compose Down and Compose Up again, Frontend feed page is still empty. Will investigate more.
+
+
+
+
+
+
+
+
 #### Reference:
 
 [Docker Compose Documentation](https://docs.docker.com/compose/gettingstarted/)
