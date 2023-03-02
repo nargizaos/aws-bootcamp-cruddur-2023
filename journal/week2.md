@@ -51,7 +51,7 @@ aws xray create-group \
    --filter-expression "service(\"backend-flask\")"
 ```
 
-<img src="https://user-images.githubusercontent.com/66444859/222337755-2b11ed39-d09e-4190-bc6e-ccf8a25235fa.png" width=40% >
+<img src="https://user-images.githubusercontent.com/66444859/222337755-2b11ed39-d09e-4190-bc6e-ccf8a25235fa.png" width=65% >
 
 X-Ray traces group was created, which will group traces together with ```service("backend-flask")``` filter:
 
@@ -60,7 +60,7 @@ X-Ray traces group was created, which will group traces together with ```service
 Create sampling rule
 ```aws xray create-sampling-rule --cli-input-json file://aws/json/xray.json```
 
-<img src="https://user-images.githubusercontent.com/66444859/222340536-9812a71d-91e0-410c-ba05-d407b4fa8a46.png" width=55% >
+<img src="https://user-images.githubusercontent.com/66444859/222342893-bd1177a8-4e25-4ccc-875d-27699d47156c.png" width=55% >
 
 Sampling rile was created
 
@@ -81,6 +81,60 @@ Add Deamon Service to Docker Compose
     ports:
       - 2000:2000/udp
 ```
+<img src="https://user-images.githubusercontent.com/66444859/222346226-344a38b5-3c1f-44a8-8928-5dc9d8eeacc1.png" width=50% >
+
+Add these two env vars to our backend-flask in our ```docker-compose.yml``` file. Here are providing AWS X-Ray url and daemon address
+```
+      AWS_XRAY_URL: "*4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}*"
+      AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000"
+```
+Run ```docker compose up```
+
+Backend and xray-daemon containers are not running
+
+<img src="https://user-images.githubusercontent.com/66444859/222346892-62bfe716-5fd8-4f63-8210-486cdbe74819.png" width=50% >
+
+Checked backend container logs and it shows that ```\"app" is not defined```
+
+<img src="https://user-images.githubusercontent.com/66444859/222347483-b60ff5ae-d34a-4240-ad14-c22741626a9a.png" width=50% >
+
+We moved ```XRayMiddleware(app, xray_recorder)``` under "app" in ```app.py```
+
+<img src="https://user-images.githubusercontent.com/66444859/222347911-9a4b750f-fac6-41fd-936a-0c2b1528afae.png" width=45% >
+
+Re-run ```compose up``` and backend and xray-daemon containers are running. 
+Opened backend on browser and was able to connect. Hit endpoint multiple times. 
+
+Looking in backend-flask logs, Andrew got xray errors saying: ```GetSamplingRules operation: Bad Gateway```.
+But in my logs I did not get any errors.
+In xray-daemon logs Andrew got error: ```send request failed: ... no such host```
+
+This is what I got in my xray-daemon logs: 
+
+<img src="https://user-images.githubusercontent.com/66444859/222350836-200c0aad-50e7-464f-8fcc-a1d2e4d5519b.png" width=65% >
+
+Looks like Andrew misspelled AWS region name in ```docker-compose.yaml```.
+
+In order to find out it's being delivered into X-Ray, open xray-daemon logs it is showing that batch of segments were successfully sent.
+
+<img src="https://user-images.githubusercontent.com/66444859/222352136-43aa5f10-6175-4451-90a4-c72d24f26e7e.png" width=65% >
+
+Go to AWS console > X-Ray > Traces - we can see some data
+
+<img src="https://user-images.githubusercontent.com/66444859/222353321-878e83a8-befd-48ce-89e6-16ef43b8b76b.png" width=65% >
+
+<img src="https://user-images.githubusercontent.com/66444859/222352883-a43360b5-97e2-4943-ac72-e57876e4cc44.png" width=49% >
+
+If we click on one of the traces, we can see Trace Map
+
+<img src="https://user-images.githubusercontent.com/66444859/222353593-2d930bb7-6195-4e71-b780-dcc68db3fcd0.png" width=49% >
+
+Here is our span:
+
+<img src="https://user-images.githubusercontent.com/66444859/222353968-76725b6f-4d55-43e4-a94e-0b0135482f64.png" width=65% >
+
+###### Start a custom segment
+
 
 
 
