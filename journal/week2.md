@@ -149,7 +149,61 @@ Ran the query from X-Ray Traces and got error:
 Re-ran ```Compose Up```, hit endpoint multiple times, checked from AWS X-ray Traces, still getting 4xx errors, will look into it later.
 
 
+#### Configure custom logger to send to CloudWatch Logs
 
+Added to the ```requirements.txt```
+```watchtower```
+```pip install -r requirements.txt```
+
+In ```app.py``` added:
+```
+import watchtower
+import logging
+from time import strftime
+```
+It will set up log group in CloudWatch Logs called **cruddur**
+```
+# Configuring Logger to Use CloudWatch
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+console_handler = logging.StreamHandler()
+cw_handler = watchtower.CloudWatchLogHandler(log_group='cruddur')
+LOGGER.addHandler(console_handler)
+LOGGER.addHandler(cw_handler)
+LOGGER.info("some message")
+```
+<img src="https://user-images.githubusercontent.com/66444859/222877769-68f21098-7d2e-432c-8794-931fc2c1d11e.png" width=55% >
+
+
+```
+@app.after_request
+def after_request(response):
+    timestamp = strftime('[%Y-%b-%d %H:%M]')
+    LOGGER.error('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme, request.full_path, response.status)
+    return response
+``` 
+Set the env var in your backend-flask for ```docker-compose.yml```
+```
+      AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+```
+
+Added ```logger``` value in ```/api/activities/home``` in ```app.py```: 
+
+<img src="https://user-images.githubusercontent.com/66444859/222877758-e45018ae-ac70-4753-927a-c902d94bee5c.png" width=55% >
+
+Backend/api/activities/home came up working, hit the endpoint multiple times.
+
+Go to CloudWatch from AWS console > Log groups > we will see cruddur log group
+
+<img src="https://user-images.githubusercontent.com/66444859/222877965-e8a93743-cf95-468c-ae24-86bc33547f6f.png" width=55% >
+
+<img src="https://user-images.githubusercontent.com/66444859/222878002-bc7b8595-8862-4d32-a5db-ec2e290943a9.png" width=55% >
+
+It's showing ```HomeActivities```
+
+<img src="https://user-images.githubusercontent.com/66444859/222878212-f8adbeab-2437-43e0-b5f2-d0a06dfee754.png" width=55% 
 
 
 
