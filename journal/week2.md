@@ -133,8 +133,26 @@ Here is our span:
 
 <img src="https://user-images.githubusercontent.com/66444859/222353968-76725b6f-4d55-43e4-a94e-0b0135482f64.png" width=65% >
 
-###### Start a custom segment
+##### Start a custom segment/subsegment
+From [AWS X-Ray repo](https://github.com/aws/aws-xray-sdk-python)
+
+Added custom segment to ```user_activities.py```
+
+<img src="https://user-images.githubusercontent.com/66444859/222876371-6874b335-8dd3-4728-9638-2efbd2041f6e.png" width=49% >
+
+<img src="https://user-images.githubusercontent.com/66444859/222876395-9861b956-ff61-4405-bb72-4da159c6b8e9.png" width=49% >
+
+Ran the query from X-Ray Traces and got error:
+
+<img src="https://user-images.githubusercontent.com/66444859/222876450-eeb5c87d-d862-4733-b4d4-ee358d8b1d9c.png" width=55% >
+
+Re-ran ```Compose Up```, hit endpoint multiple times, checked from AWS X-ray Traces, still getting 4xx errors, will look into it later.
 
 
 
 
+
+
+##### Referrence 
+
+https://github.com/aws/aws-xray-sdk-python
