@@ -203,7 +203,7 @@ Go to CloudWatch from AWS console > Log groups > we will see cruddur log group
 
 It's showing ```HomeActivities```
 
-<img src="https://user-images.githubusercontent.com/66444859/222878212-f8adbeab-2437-43e0-b5f2-d0a06dfee754.png" width=55% 
+<img src="https://user-images.githubusercontent.com/66444859/222878212-f8adbeab-2437-43e0-b5f2-d0a06dfee754.png" width=55%>
 
 
 
