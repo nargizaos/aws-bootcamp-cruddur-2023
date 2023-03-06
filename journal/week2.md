@@ -1,7 +1,143 @@
 # Week 2 — Distributed Tracing
-### Required Homework
+## Required Homework
 
-#### Instrument X-Ray
+### Distributed Tracing with HoneyComb
+
+Open HoneyComb > Create new environment called ```bbotcamp```. 
+Get ```API key``` from HB and export: 
+
+```
+export HONEYCOMB_API_KEY=""
+export HONEYCOMB_SERVICE_NAME="Cruddur"
+gp env HONEYCOMB_API_KEY=""
+gp env HONEYCOMB_SERVICE_NAME="Cruddur"
+```
+
+Add OTEL Env vars to ```docker-compose.yaml```
+```
+OTEL_SERVICE_NAME: 'backend-flask'
+OTEL_EXPORTER_OTLP_ENDPOINT: "https://api.honeycomb.io"
+OTEL_EXPORTER_OTLP_HEADERS: "x-honeycomb-team=${HONEYCOMB_API_KEY}"
+```
+
+Add the following files to our ```requirements.txt```
+```
+opentelemetry-api 
+opentelemetry-sdk 
+opentelemetry-exporter-otlp-proto-http 
+opentelemetry-instrumentation-flask 
+opentelemetry-instrumentation-requests
+```
+Install these dependencies:
+```pip install -r requirements.txt```
+
+Add to the ```app.py```
+```
+from opentelemetry import trace
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+```
+
+```
+# Initialize tracing and an exporter that can send data to Honeycomb
+provider = TracerProvider()
+processor = BatchSpanProcessor(OTLPSpanExporter())
+provider.add_span_processor(processor)
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(__name__)
+```
+
+Put in ```app.py``` below ```app = Flask(__name__)```:
+```
+# Initialize automatic instrumentation with Flask
+FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()
+```
+
+Add SpanProcessor to ```app.py```:
+```from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter```
+
+```
+#Show this in the logs within backend-flask
+simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
+provider.add_span_processor(simple_processor)
+```
+
+Run ```Compose Up```
+
+You can check which Environment is using your API key on: ```honeycomb-whoami.glitchme```
+
+<img src="https://user-images.githubusercontent.com/66444859/223024244-20248ea9-f033-4332-a98f-0301030a2ee5.png" width=40% >
+
+We connected to backend-flask shell and checked Env Vars ```env | grep HONEY``` and it's not there: 
+
+<img src="https://user-images.githubusercontent.com/66444859/223024502-a1cd53ea-577e-49cc-9e45-c79efc9a4fbc.png" width=40% >
+
+In order to solve it, we can try comitting code, closing and opening Gitpod workspace again.
+
+If we open HCM home we see there were some traces created
+
+<img src="https://user-images.githubusercontent.com/66444859/223025073-0298cf9f-8667-4c28-aefb-9976c9505443.png" width=55% >
+
+<img src="https://user-images.githubusercontent.com/66444859/223025161-4468ffa5-7ab0-41c2-8f48-b70a7ced298e.png" width=20% >
+
+
+Hard coding a span
+Add this to ```app.py```
+```
+from opentelemetry import trace
+tracer = trace.get_tracer("home.activities")
+```
+
+And add this to ```home_activities.py```:
+```
+def run(logger):
+  with tracer.start_as_current_span("home-activites-mock-data"):
+    span = trace.get_current_span()
+```
+
+Open backend home page and make sure it's working.
+
+On HCM home page see if it's getting data and traces. New ```home-activities-mock-data``` trace was created
+
+<img src="https://user-images.githubusercontent.com/66444859/223026895-febc4800-772e-4f58-9258-6e4f2e45c575.png" width=55% >
+
+<img src="https://user-images.githubusercontent.com/66444859/223027139-5a74b455-f107-469c-ac28-f5cc9a66b494.png" width=60% >
+
+Add attribute to the span, add to ```home_activities.py```:
+```
+ now = datetime.now(timezone.utc).astimezone()
+ span.set_attribute("app.now", now.isoformat())
+```
+
+```
+ span.set_attribute("app.result_length", len(results))
+```
+Create custom query
+
+<img src="https://user-images.githubusercontent.com/66444859/223030709-19608c15-4b93-44c7-bedd-61d6cb37e494.png" width=55% >
+
+<img src="https://user-images.githubusercontent.com/66444859/223030847-3e6fc0e6-7b3e-4488-ac31-435e1711c74a.png" width=55% >
+
+See traces for last 10 minutes
+
+<img src="https://user-images.githubusercontent.com/66444859/223031013-45bba875-5967-4e23-b028-c8faf0108bbc.png" width=55% >
+
+Try one more query for ```app.result_length exists```
+
+<img src="https://user-images.githubusercontent.com/66444859/223031292-ae36047f-54cf-41bc-8500-c6885ad6cc89.png" width=55% >
+
+Look into latency with ```HEATMAP(duration_ms)```
+
+<img src="https://user-images.githubusercontent.com/66444859/223031447-09531f95-20cb-43c1-b148-ddb63239762e.png" width=55% >
+
+<img src="https://user-images.githubusercontent.com/66444859/223031485-70e2b901-afd5-4d09-8f26-d291334f84bc.png" width=55% >
+
+
+### Instrument X-Ray
 
 Added aws-sdk to ```app.py```:
 
@@ -62,7 +198,7 @@ Create sampling rule
 
 <img src="https://user-images.githubusercontent.com/66444859/222342893-bd1177a8-4e25-4ccc-875d-27699d47156c.png" width=55% >
 
-Sampling rile was created
+Sampling rule was created
 
 <img src="https://user-images.githubusercontent.com/66444859/222341367-08e04544-af52-44b1-a1fa-b8ed0d438343.png" width=55% >
 
@@ -149,9 +285,32 @@ Ran the query from X-Ray Traces and got error:
 Re-ran ```Compose Up```, hit endpoint multiple times, checked from AWS X-ray Traces, still getting 4xx errors, will look into it later.
 
 #### Fixing X-Ray
+Watched Andrew's video for X-Ray Subsegments Solved.
+
+In irder to continue fixing errors, we need to bring back commented out ```segments``` in ```app.py``` and ```user_activities.py```.
+Since we want Traces to be created for user ```@andrewbronw```, we want to hit ```backendurl\@andrewbron``` endpoint.
+
+Hit ```backendurl\@andrewbron``` endpoint multiple times, Go to AWS X-Ray > Traces > see if new traces were created for this endpoint. 
+
+We checked the logs for ```-xray-daemon``` container for ```home``` page and it's sending segments, but it's not sending segmnents for ```\userpage```.
+
+We tried using ChatGPT to generate code using AWS X-Ray SDK: implement a flask application endpoint to use AWS SDK X-Ray.
+It produced similar code as we had, additionally it produced ```capture``` method to use as a subsegment that will be associated with our endpoint function. 
+Added this line to ```/api/activities/home``` route in ```app.py```:
+```@xray_recorder.capture('activities_home')```
+
+as well as to ```UserActivities```:
+```@xray_recorder.capture('activities_show')```
+
+Update ```home``` and ```\userfeed``` page multiple times and see if we got some data. Go to X-Ray Traces > 
 
 
-#### Configure custom logger to send to CloudWatch Logs
+<img src="https://user-images.githubusercontent.com/66444859/223016233-b3c64ee7-216e-4b72-a75a-ee1b632dd41b.png" width=40% >
+
+Placeholder for fix, will come back later and add steps.
+
+
+### Configure custom logger to send to CloudWatch Logs
 
 Added to the ```requirements.txt```
 ```watchtower```
@@ -210,7 +369,7 @@ It's showing ```HomeActivities```
 <img src="https://user-images.githubusercontent.com/66444859/222878212-f8adbeab-2437-43e0-b5f2-d0a06dfee754.png" width=55%>
 
 
-#### Rollbar
+### Rollbar
 
 Added to ```requirements.txt```:
 ```
