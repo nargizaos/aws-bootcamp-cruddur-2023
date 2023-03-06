@@ -148,12 +148,16 @@ Ran the query from X-Ray Traces and got error:
 
 Re-ran ```Compose Up```, hit endpoint multiple times, checked from AWS X-ray Traces, still getting 4xx errors, will look into it later.
 
+#### Fixing X-Ray
+
 
 #### Configure custom logger to send to CloudWatch Logs
 
 Added to the ```requirements.txt```
 ```watchtower```
 ```pip install -r requirements.txt```
+
+Watchtower is a log handler for AWS CloudWatch Logs.
 
 In ```app.py``` added:
 ```
@@ -204,6 +208,123 @@ Go to CloudWatch from AWS console > Log groups > we will see cruddur log group
 It's showing ```HomeActivities```
 
 <img src="https://user-images.githubusercontent.com/66444859/222878212-f8adbeab-2437-43e0-b5f2-d0a06dfee754.png" width=55%>
+
+
+#### Rollbar
+
+Added to ```requirements.txt```:
+```
+blinker
+rollbar
+```
+```pip install -r requirements.txt```
+
+ Set our Rollbar access token: 
+ ```
+export ROLLBAR_ACCESS_TOKEN=""
+gp env ROLLBAR_ACCESS_TOKEN=""
+```
+
+Added to backend-flask for ```docker-compose.yml```
+```ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}"```
+
+Imported for Rollbar
+```
+import rollbar
+import rollbar.contrib.flask
+from flask import got_request_exception
+```
+
+Added import for Rollbar to ```app.py```:
+```
+import os
+import rollbar
+import rollbar.contrib.flask
+from flask import got_request_exception
+```
+```
+rollbar_access_token = os.getenv('ROLLBAR_ACCESS_TOKEN')
+@app.before_first_request
+def init_rollbar():
+    """init rollbar module"""
+    rollbar.init(
+        # access token
+        rollbar_access_token,
+        # environment name
+        'production',
+        # server root directory, makes tracebacks prettier
+        root=os.path.dirname(os.path.realpath(__file__)),
+        # flask already sets up logging
+        allow_logging_basic_config=False)
+
+    # send exceptions from `app` to rollbar, using flask's signal system.
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+```
+
+Added endpoint for tesing Rollbar to ```app.py```:
+```
+@app.route('/rollbar/test')
+def rollbar_test():
+    rollbar.report_message('Hello World!', 'warning')
+    return "Hello World!"
+```
+
+Ran ```Compose Up``` to bring up our apps.
+When browsing backend ran into error ```'app' is not defined```, container did not come up healthy and wouldn't open from browser. Turns out we placed 
+our code for Rollbar initialization above ```app```. Moved code below ```app``` in ``app.py```. And Compose Up. 
+
+Home page came up clean
+
+<img src="https://user-images.githubusercontent.com/66444859/222991340-3a343ff5-b704-43c3-887a-a0c794624fcf.png" width=45%>
+
+Opened ```/rollbar/test``` endpoint
+
+<img src="https://user-images.githubusercontent.com/66444859/222991391-4b0d39e1-e2bf-4519-ade4-ef7736c15102.png" width=65%>
+
+Rollbar page is showing that it is listening:
+
+<img src="https://user-images.githubusercontent.com/66444859/222991484-c13ace2b-0f7f-4e1c-87e8-1521c69c81ee.png" width=55%>
+
+Checked the logs for backend-flask
+
+<img src="https://user-images.githubusercontent.com/66444859/222991621-d7fe719d-af2e-4736-97b8-30aa4e102c0a.png" width=55%>
+
+Attached to backend-flask shell and checked ```env``` variables to be set and it's showing it's not set. 
+Closed workspaces and attached to workspace again. 
+Commented out X-Ray processor for now: 
+```
+simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
+provider.add_span_processor(simple_processor)
+```
+
+Added Rollbar Access Token to ```docker-compose.yaml```:
+```ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}"```
+
+Logs are showing Rollbar test: 
+
+<img src="https://user-images.githubusercontent.com/66444859/222994041-5eaa9d50-81ba-4793-b13a-ac6da9804a6c.png" width=55%>
+
+Now we can see new Item in Rollbar
+
+<img src="https://user-images.githubusercontent.com/66444859/222994180-aa22fd53-d5a9-44af-839a-00d98929b43c.png" width=55%>
+
+If we click ```Hello World!``` item
+
+<img src="https://user-images.githubusercontent.com/66444859/222994230-38605a68-6423-49ef-a598-55f67e6b34fe.png" width=55%>
+
+<img src="https://user-images.githubusercontent.com/66444859/222994248-55b3b1ec-40dd-4491-861c-f9fa19560fdf.png" width=55%>
+
+Let's change the code and make an error occur. Commented out ```return results``` from ```home_activities.py```.
+
+Go to Rollbar > Items and will see an error: 
+
+<img src="https://user-images.githubusercontent.com/66444859/222994498-db46d733-58b4-4c07-baa2-5f7f2d3e8f3b.png" width=55%>
+
+<img src="https://user-images.githubusercontent.com/66444859/222995348-7bbdea7a-1268-4e71-981d-7cc202a2bba8.png" width=55%>
+
+
+
+
 
 
 
