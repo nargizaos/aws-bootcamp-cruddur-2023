@@ -116,6 +116,15 @@ Add attribute to the span, add to ```home_activities.py```:
 ```
  span.set_attribute("app.result_length", len(results))
 ```
+Spans in backend app logs
+
+<img src="https://user-images.githubusercontent.com/66444859/223035413-d6ee590a-7922-45e3-829c-76d18c540aff.png" width=40% >
+<img src="https://user-images.githubusercontent.com/66444859/223035444-94a9448b-25c7-4180-99e3-220db7ef5340.png" width=40% >
+
+Two spans in HCM traces
+
+<img src="https://user-images.githubusercontent.com/66444859/223035837-8a888453-20b6-4cfc-9b52-c6c92612a6eb.png" width=55% >
+
 Create custom query
 
 <img src="https://user-images.githubusercontent.com/66444859/223030709-19608c15-4b93-44c7-bedd-61d6cb37e494.png" width=55% >
