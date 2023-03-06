@@ -125,6 +125,9 @@ Two spans in HCM traces
 
 <img src="https://user-images.githubusercontent.com/66444859/223035837-8a888453-20b6-4cfc-9b52-c6c92612a6eb.png" width=55% >
 
+<img src="https://user-images.githubusercontent.com/66444859/223036410-bc8099a8-f563-45e3-a1be-2af58f5762d4.png" width=65% >
+
+
 Create custom query
 
 <img src="https://user-images.githubusercontent.com/66444859/223030709-19608c15-4b93-44c7-bedd-61d6cb37e494.png" width=55% >
