@@ -175,7 +175,10 @@ We tried to sign in and Andrew did not get an error.
 
 Inspect showed this error: ``USR_SRP_AUTH is not enbled for client```. Turns out Andrew chose incorrect App type ```Other``` instead of ```Piblic client```.
 
-From my side I got another error: ```Error! NotAuthorizedException: Incorrect username or password.```
+From my side, looking into Inspect I got another error: ```Error! NotAuthorizedException: Incorrect username or password.``` and got that error from UI
+
+<img src="https://user-images.githubusercontent.com/66444859/223593282-adec860d-f718-4f97-b33c-ed42b3a79fd9.png" width=40%>
+
 
 We missed to add ```preferred_username``` in Required Attributes in User pool, we need to add this later. 
 
@@ -187,6 +190,15 @@ Create a new user in your User Pool
 
 
 Tried to Sign in, but  it didn't work. Confirmation status is Force change password. Since we need to Confirm account, but Confirm account button is grey and we can't confirm. And we didn't get Confirmation to specified email address.
+
+Try running AWS CLI command from terminal
+```aws cognito-idp admin-set-user-password --username nargizaosmon --password yoursetpassword --user-pool-id us-east-1_CWw2a8NO6 --permanent```
+
+And I don't see ```Force change password``` in Confirmation Status
+
+<img src="https://user-images.githubusercontent.com/66444859/223594032-3d7fce2c-8320-47da-913b-2228a32a58fd.png" width=50%>
+
+But still got error when signing in with new username(email) and password. 
 
 
 
