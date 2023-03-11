@@ -131,7 +131,8 @@ const signOut = async () => {
   }
 }
 ```
-When tried to open frontend page, we got a blan page. 
+When tried to open frontend page, we got a blank page. 
+
 <img src="https://user-images.githubusercontent.com/66444859/223570990-1dafe992-f10e-46aa-acb8-ce3ce95b3e6d.png" width=55%>
 
 Opened Inspect and it's showing ```Error: Both UserPoolId and ClientId are required.```
@@ -145,7 +146,7 @@ Our frontend page is back:
 
 <img src="https://user-images.githubusercontent.com/66444859/223573130-060942d0-5741-450d-84f3-69958741b60d.png" width=55%>
 
-##### Signin Page
+### Signin Page
 
 ```
 import { Auth } from 'aws-amplify';
@@ -173,7 +174,7 @@ We tried to sign in and Andrew did not get an error.
 
 <img src="https://user-images.githubusercontent.com/66444859/223576363-1e4f42ab-a955-48e2-bbae-51cd9ecbf89f.png" width=40%>
 
-Inspect showed this error: ``USR_SRP_AUTH is not enbled for client```. Turns out Andrew chose incorrect App type ```Other``` instead of ```Piblic client```.
+Inspect showed this error: ```USR_SRP_AUTH is not enbled for client```. Turns out Andrew chose incorrect App type  ```Other``` instead of ```Piblic client```.
 
 From my side, looking into Inspect I got another error: ```Error! NotAuthorizedException: Incorrect username or password.``` and got that error from UI
 
@@ -189,7 +190,7 @@ Create a new user in your User Pool
 <img src="https://user-images.githubusercontent.com/66444859/223583317-f2d72c18-6c66-44f9-b5e6-00dc5d324b4e.png" width=55%>
 
 
-Tried to Sign in, but  it didn't work. Confirmation status is Force change password. Since we need to Confirm account, but Confirm account button is grey and we can't confirm. And we didn't get Confirmation to specified email address.
+Tried to Sign in, but  it didn't work. Confirmation status is Force change password. We need to Confirm account, but Confirm account button is grey and we can't confirm. And we didn't get Confirmation to specified email address.
 
 Try running AWS CLI command from terminal
 ```aws cognito-idp admin-set-user-password --username nargizaosmon --password yoursetpassword --user-pool-id us-east-1_CWw2a8NO6 --permanent```
@@ -201,9 +202,10 @@ And I don't see ```Force change password``` in Confirmation Status
 But still got error when signing in with new username(email) and password. 
 
 Went back and checked my code, turns out I didn't remove one line in ```SigninPage.js```. Removed the line, recreated my user pool, addedd ```preferred_name``` to requirements and got ```Invalid username or password```, which is correct error. 
+
 <img src="https://user-images.githubusercontent.com/66444859/224200634-9ef1e728-216b-4150-a936-6de6e6d3c731.png" width=35%>
 
-Before force changing password, we were getting ```Cannot read properties of null(reading 'accessToken')``` error, because it was requiring Force PAssword Change.
+Before force changing password, we were getting ```Cannot read properties of null(reading 'accessToken')``` error, because it was requiring Force Password Change.
 
 <img src="https://user-images.githubusercontent.com/66444859/224200894-bc307ce2-eb1b-4f9c-813f-914d7f23b318.png" width=35%>
 
@@ -220,11 +222,11 @@ Checked Inspect user messages and it is showing that we were able to sign in.
 
 Since our user name is not set up and showing ```handle``` (as in previous picture), we can add ```preferred_username``` user attribute and it should show up in our page.
 
-<img src="https://user-images.githubusercontent.com/66444859/224206441-2f6fa84b-eb9e-47cb-acc1-8b69650d1792.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/224206441-2f6fa84b-eb9e-47cb-acc1-8b69650d1792.png" width=45%>
 
-<img src="https://user-images.githubusercontent.com/66444859/224207063-8d970e1a-1edb-4cc6-b51f-7f0887f4e11d.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/224207063-8d970e1a-1edb-4cc6-b51f-7f0887f4e11d.png" width=45%>
 
-#### Sign up Page
+### Sign up Page
 
 Add to ```SignupPage.js```
 
@@ -257,7 +259,7 @@ const onsubmit = async (event) => {
   }
   ```
   
-  #### Confirmation Page
+  ### Confirmation Page
   
   ```
   import { Auth } from 'aws-amplify';
@@ -300,9 +302,9 @@ const onsubmit = async (event) => {
 
   
  We changed ```Cognito user pool sign-in options``` to  ```email``` only by re-creating user pool from console.
- But I changed ``` email: username``` to ```email: email``` in ```SigninPage.js``` to be able to sign in. Probably will need to look into it more in the future, because Andre left the value as ```email: username```.
+ But I changed ``` email: username``` to ```email: email``` in ```SigninPage.js``` to be able to sign in. 
  
- I was able to sign up and got verification code
+ I was able to sign up and got verification code.
  
 <img src="https://user-images.githubusercontent.com/66444859/224220235-71a5527a-b2ad-4098-b92d-dfc4f4e8e622.png" width=50%>
 
@@ -314,7 +316,7 @@ const onsubmit = async (event) => {
  
 <img src="https://user-images.githubusercontent.com/66444859/224222991-95251d76-32ab-48c4-9dec-d6af22604fac.png" width=50%>
 
-#### Recovery Page
+### Recovery Page
 
 Add to ```RecoverPage.js```
 
@@ -343,7 +345,7 @@ const onsubmit_send_code = async (event) => {
     return false
   }
 ```
-Signed out, clicked Forgot Password and was able to send recovery email. Code Password reset code
+Signed out, clicked Forgot Password and was able to send recovery email. Password reset code
 
 <img src="https://user-images.githubusercontent.com/66444859/224224324-d4a514fc-53dd-4b00-8363-3a226996ddbf.png" width=30%>
 
@@ -351,7 +353,7 @@ Password has been reset
 
 <img src="https://user-images.githubusercontent.com/66444859/224224534-9b7b84fe-6234-4946-be8f-87e56967ff11.png" width=40%>
 
-#### Congito JWT Server side Verify
+### Cognito JWT Server side Verify
 
 Add to ```HomeFeedPage.js```
 
@@ -552,6 +554,14 @@ Add to ```docker-compose.yaml```:
 AWS_COGNITO_USER_POOL_ID:
 AWS_COGNITO_USER_POOL_CLIENT_ID:
 ```
+Was able to Sign in after Cognito Jwt Server side verify
+
+<img src="https://user-images.githubusercontent.com/66444859/224495561-ebd51d68-8456-44d1-a970-31814c1fbd5b.png" width=50%>
+
+Was able to connect to Backend page 
+
+<img src="https://user-images.githubusercontent.com/66444859/224495668-648fb835-d3cb-4c5b-85b2-b2a40a388246.png" width=45%>
+
 
 #### Reference
 [Amplify docs](https://docs.amplify.aws/lib/auth/getting-started/q/platform/js/)
