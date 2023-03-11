@@ -1,0 +1,5 @@
+#! /usr/bin/bash
+
+echo "db-create"
+
+psql $CONNECTION_URL -c "create database cruddur;"
