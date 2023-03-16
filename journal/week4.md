@@ -220,14 +220,180 @@ echo $schema_path
 psql $CONNECTION_URL cruddur < $schema_path
 ```
 ```
-./backend-flask/bin/db-schema-load`
+./backend-flask/bin/db-schema-load
 ```
 It's not working for now, but we'll come back to it later. 
 
 
 We need to find a way to toggle between our ```local``` and ```Prod``` mode. We can do ```if else``` statement for that. 
 
+In ```db-schema-load```:
 
+```
+if ["$1" = "prod"]; then
+  echo "using production key"
+  CON_URL=$PROD_CONNECTION_URL
+else
+  CON_URL=$CONNECTION_URL
+fi
+```
+
+Run:
+```
+./bin/db-schema-load prod
+```
+
+It should show ```using production``` and it's just hanging there because we stopped our rds instance from console. 
+
+
+### Create our tables
+https://www.postgresql.org/docs/current/sql-createtable.html
+
+We will be creating ```user``` table and ```activities``` table. 
+
+In ```db/schema-sql```:
+
+```
+CREATE TABLE public.users (
+  uuid UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_uuid UUID NOT NULL,
+  display_name text,
+  handle text,
+  cognito_user_id text,
+  created_at TIMESTAMP default current_timestamp NOT NULL
+);
+```
+
+```
+CREATE TABLE public.activities (
+  uuid UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  message text NOT NULL,
+  replies_count integer DEFAULT 0,
+  reposts_count integer DEFAULT 0,
+  likes_count integer DEFAULT 0,
+  reply_to_activity_uuid integer,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP default current_timestamp NOT NULL
+);
+```
+We want to delete tables before creating, so we need to put it above ```CREATE TABLE``` :
+
+```
+DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS public.activities;
+```
+Create tables:
+```
+./bin/db-schema-load
+```
+
+### Shell Script to Connect to DB
+
+We need to create script to connect. Create ```db-connect``` in ```bin```.
+
+```
+export CONNECTION_URL="postgresql://postgres:pssword@127.0.0.1:5433/cruddur"
+gp env CONNECTION_URL="postgresql://postgres:pssword@127.0.0.1:5433/cruddur"
+```
+In ```bin/db-connect```:
+
+```
+#! /usr/bin/bash
+
+psql $CONNECTION_URL
+```
+
+Make file executable:
+
+```
+chmod u+x /bin/db-connect
+```
+Execute the script:
+
+```./bin/db-connect```
+
+ List all tables in the current database
+ 
+```\dt```
+
+### Shell script to load the seed data
+
+Create ```db-seed``` in ```bin```.
+
+```
+#! /usr/bin/bash
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-seed"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+seed_path="$(realpath .)/db/seed.sql"
+echo $seed_path
+
+if ["$1" = "prod"]; then
+  echo "using production key"
+  CON_URL=$PROD_CONNECTION_URL
+else
+  CON_URL=$CONNECTION_URL
+fi
+
+psql $CON_URL cruddur < $seed_path
+```
+
+
+Make file executable:
+
+```
+chmod u+x /bin/db-seed
+```
+
+Create ```seed.sql``` file in ```db``` folder. We need it to give initial values, insert data rows.
+
+```
+-- this file was manually created
+INSERT INTO public.users (display_name, handle, cognito_user_id)
+VALUES
+  ('Andrew Brown', 'andrewbrown' ,'MOCK'),
+  ('Andrew Bayko', 'bayko' ,'MOCK');
+
+INSERT INTO public.activities (user_uuid, message, expires_at)
+VALUES
+  (
+    (SELECT uuid from public.users WHERE users.handle = 'andrewbrown' LIMIT 1),
+    'This was imported as seed data!',
+    current_timestamp + interval '10 day'
+  )
+```
+
+Execute the ```db-seed``` script:
+
+```./bin/db-seed```
+
+We ran into ```user_uuid does not exist```. We forgot to insert ```user_uuid UUID NOT NULL,``` in ```schema-sql```.
+
+After adding, run ```schema-load```:
+
+```./bin/db-schema-load```
+
+Seed our data:
+
+```./bin/db-seed```
+
+
+
+
+### Make prints nicer
+We we can make prints for our shell scripts coloured so we can see what we're doing:
+
+https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+
+```
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-schema-load"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+```
 
 
 
