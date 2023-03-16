@@ -28,6 +28,8 @@ aws rds create-db-instance \
 Here we are using ```db.t3.micro``` instance type, Postgres default version ```14.6```, storage type ```gp2``` because it's free tier.
 When your RDS Instance comes up active in Console, stop it in order to save money on spending, because RDS is not free tier. 
 
+<img src="https://user-images.githubusercontent.com/66444859/225451906-ec2742a0-2c6a-45b1-816e-762c5c2e03b1.png" width=65%>
+
 In prevous classes we have added db instance code in our ```docker-compose.yaml```:
 ```
 db:
@@ -99,9 +101,134 @@ The command to import:
 Before importing script we will add UUID extensions. UUID stands for Universally Unique Identifier. It will generate random string which will be attached to IDs or names of the tables.
 
 We are going to have Postgres generate out UUIDs. We'll need to use an extension called:
+
 ```
 CREATE EXTENSION "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ```
 We will put only the second one which will add only if extension does not exists. 
+
+If don't want to type password every time we connect to Postgres, we can create a ```CONNECTION_URL``` which will contain the endpoint nad password. 
+Here is the ```CONNECTION_URL``` command to run from CLI: 
+
+```
+export CONNECTION_URL="postgresql://postgres:password@localhost:5432/cruddur"
+gp env CONNECTION_URL="postgresql://postgres:password@127.0.0.1:5432/cruddur"
+```
+Now we can connect with this short command:
+
+```psql $CONNECTION _URL```
+
+Connection URL for Prod: 
+
+```
+export PROD_CONNECTION_URL="postgresql://cruddurroot:yourrdspassword@cruddur-db-instance.czuqvdoungei.us-east-1.rds.amazonaws.com:5432/cruddur"
+gp env PROD_CONNECTION_URL="postgresql://cruddurroot:yourrdspassword@cruddur-db-instance.czuqvdoungei.us-east-1.rds.amazonaws.com:5432/cruddur"
+```
+
+### Shell script to drop the database
+
+For things we commonly need to do we can create a new directory called ```bin``` in ```backend-flask``` folder.
+
+We'll create an new folder called bin to hold all our bash scripts.
+
+```
+mkdir /workspace/aws-bootcamp-cruddur-2023/backend-flask/bin
+```
+
+Create the files on ```bin``` folder
+```
+db-create
+db-drop
+db-schema-load
+```
+
+To drop database we can put this command in ```db-drop```:
+
+```
+#! /usr/bin/bash
+psql $CONNECTION _URL -c "drop database cruddur;" 
+```
+
+In order to execute bash script we need to make these files executable. We'' use ```chmod``` command for that.
+
+```
+ls -l ./bin
+chmod u+x bin/db-create
+chmod u+x bin/db-drop
+chmod u+x bin/db-schema-load 
+```
+
+Try executing drop script:
+```
+./bin/db-drop
+```
+
+We ran into error  ```cannot drop currently open database```.  When we are using ```CONNECTION_URL``` we are connecting to database and trying to drop it while being connected to it. Our ```CONNECTION_URL``` should exclude ```database``` part. We'll use ```sed``` command to exlude database from ```CONNECTION_URL```.  
+
+```sed 's/#select/#replacewith/g'```
+
+Replace command in ```db-drop``` to this command:
+
+```NO_DB_CONNECTION_URL=$(sed 's/\/cruddur//g' <<<"$CONNECTION_URL")```
+
+```
+./bin/db-drop
+```
+
+### Shell Script to Connect to DB
+
+In ```db-create``` file:
+
+```
+#! /usr/bin/bash
+echo "db-create"
+
+NO_DB_CONNECTION_URL=$(sed 's/\/cruddur//g' <<< "$CONNECTION_URL")
+psql $NO_DB_CONNECTION_URL -c "create database cruddur;"
+
+```
+
+```
+./bin/db-create
+```
+
+In ```db-schema-load```:
+
+```
+#! /usr/bin/bash
+
+echo "db-schema-load"
+
+psql $CONNECTION_URL cruddur < db/schema.sql
+```
+
+```
+./bin/db-schema-load`
+```
+
+This execution command only works while we are inside ```backend-flask``` folder. To make this work outside of that folder we'll use ```realpath``` feature. 
+
+```
+#! /usr/bin/bash
+
+echo "db-schema-load"
+
+schema_path="$(realpath .)/db/schema.sql"
+echo $schema_path
+
+psql $CONNECTION_URL cruddur < $schema_path
+```
+```
+./backend-flask/bin/db-schema-load`
+```
+It's not working for now, but we'll come back to it later. 
+
+
+We need to find a way to toggle between our ```local``` and ```Prod``` mode. We can do ```if else``` statement for that. 
+
+
+
+
+
 
