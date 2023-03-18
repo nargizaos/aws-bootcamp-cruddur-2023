@@ -57,8 +57,8 @@ processor = BatchSpanProcessor(OTLPSpanExporter())
 provider.add_span_processor(processor)
 
 # XRay --------
-xray_url = os.getenv("AWS_XRAY_URL")
-xray_recorder.configure(service='backend-flask', dynamic_naming=xray_url)
+#xray_url = os.getenv("AWS_XRAY_URL")
+#xray_recorder.configure(service='backend-flask', dynamic_naming=xray_url)
 
 #OTEL -----------
 #Show this in the logs within backend-flask app STDOUT
@@ -77,7 +77,7 @@ cognito_jwt_token = CognitoJwtToken(
 )
 
 # XRay -------
-XRayMiddleware(app, xray_recorder)
+#XRayMiddleware(app, xray_recorder)
 
 # HoneyComb -----
 # Initialize automatic instrumentation with Flask
@@ -184,6 +184,7 @@ def data_notifications():
   return data, 200
 
 @app.route("/api/activities/@<string:handle>", methods=['GET'])
+#@xray_recorder.capture('activities_users')
 def data_handle(handle):
   model = UserActivities.run(handle)
   if model['errors'] is not None:
