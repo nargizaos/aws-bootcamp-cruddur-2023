@@ -376,11 +376,21 @@ After adding, run ```schema-load```:
 
 ```./bin/db-schema-load```
 
+<img src="https://user-images.githubusercontent.com/66444859/226056253-7aae415e-a8e1-4142-8f44-216f885c660d.png" width=60%>
+
 Seed our data:
 
 ```./bin/db-seed```
 
+<img src="https://user-images.githubusercontent.com/66444859/226055737-d418f2ca-528b-4a98-9ab9-e3e887e207b8.png" width=60%>
 
+Connect to Postgres with ```./bin/db-connect
+Run this command to see seed from ```activities```:
+
+```
+SELECT * FROM activities;
+```
+<img src="https://user-images.githubusercontent.com/66444859/226063484-26190b75-bc5d-4eb1-9048-2abd8fcdebe6.png" width=50%>
 
 
 ### Make prints nicer
@@ -394,6 +404,129 @@ NO_COLOR='\033[0m'
 LABEL="db-schema-load"
 printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
 ```
+
+### See what connections we are using
+
+When we try to drop the database, we get an error that we have 3 other sessions.
+
+<img src="https://user-images.githubusercontent.com/66444859/226064255-31009c9d-f14d-4b5d-be9f-ed0945344ece.png" width=50%>
+
+We need to find out what are those 3 active connections we have. 
+Create new file ```/bin/db-sessions``` and pase this script:
+
+```
+#! /usr/bin/bash
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-sessions"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n" 
+
+if ["$1" = "prod"]; then
+  echo "using production key"
+  URL=$PROD_CONNECTION_URL
+else
+  URL=$CONNECTION_URL
+fi
+
+NO_DB_URL=$(sed 's/\/cruddur//g' <<<"$URL")
+psql $NO_DB_URL -c "select pid as process_id, \
+       usename as user,  \
+       datname as db, \
+       client_addr, \
+       application_name as app,\
+       state \
+from pg_stat_activity;"
+```
+Make file executable
+
+```
+chmod u+x ./bin/db-sessions
+```
+
+Run ```./bin/db-sessions```
+
+<img src="https://user-images.githubusercontent.com/66444859/226065073-3dc4d867-b457-4257-8900-f8650412be68.png" width=50%>
+
+We had tried to close session by closing the connection we opened through GitPod Database Explorer, but sessions were still there. Tried to bring down everything by Compose Down, bring up with Compose Up and sessions are gone. 
+
+Create new file ```db-setup``` in ```bin```. 
+
+```
+#! /usr/bin/bash
+-e # stop if it fails at any point
+
+CYAN='\033[1;36m'
+NO_COLOR='\033[0m'
+LABEL="db-setup"
+printf "${CYAN}== ${LABEL}${NO_COLOR}\n"
+
+bin_path="$(realpath .)/bin"
+
+source "$bin_path/db-drop"
+source "$bin_path/db-create"
+source "$bin_path/db-schema-load"
+source "$bin_path/db-seed"
+```
+Make file executable
+
+```
+chmod u+x ./bin/db-setup
+```
+
+Run ```./bin/db-setup``` and we see that everything was executed, db, table created, seed was inserted.
+
+<img src="https://user-images.githubusercontent.com/66444859/226067699-cd473330-d297-43e1-8fb1-dc73801129eb.png" width=50%>
+
+### Install Postgres Driver in Backend Application
+
+We have to get Driver installed for Postgres. We will install PostgreSQL driver for Python - Psycopg. 
+https://www.psycopg.org/psycopg3/
+
+We'll add the following to our ```requirments.txt```
+
+```
+psycopg[binary]
+psycopg[pool]
+```
+
+```
+pip install -r requirements.txt
+```
+
+```db.py```
+
+```
+def query_wrap_object(template):
+  sql = '''
+  (SELECT COALESCE(row_to_json(object_row),'{}'::json) FROM (
+  {template}
+  ) object_row);
+  '''
+
+def query_wrap_array(template):
+  sql = '''
+  (SELECT COALESCE(array_to_json(array_agg(row_to_json(array_row))),'[]'::json) FROM (
+  {template}
+  ) array_row);
+  '''
+```
+
+First query is written successfully
+
+<img src="https://user-images.githubusercontent.com/66444859/226086946-ee1371b8-fa7b-4994-b644-75fbc92a2fc5.png" width=50%>
+
+<img src="https://user-images.githubusercontent.com/66444859/226087205-82299b66-6584-4bba-bf7b-c3df021ffdd7.png" width=50%>
+
+With proper query
+
+<img src="https://user-images.githubusercontent.com/66444859/226087307-892a82a3-b7b4-4639-807e-650893a3f194.png" width=50%>
+
+Frontend after adding query
+
+<img src="https://user-images.githubusercontent.com/66444859/226087366-97f464b4-baea-4b08-8b26-62dc2f177ff0.png" width=50%>
+
+
 
 
 
