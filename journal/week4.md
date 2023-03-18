@@ -28,6 +28,10 @@ aws rds create-db-instance \
 Here we are using ```db.t3.micro``` instance type, Postgres default version ```14.6```, storage type ```gp2``` because it's free tier.
 When your RDS Instance comes up active in Console, stop it in order to save money on spending, because RDS is not free tier. 
 
+
+<img src="https://user-images.githubusercontent.com/66444859/226124317-4bd65d29-57ad-40a2-bcc2-86c173b4cb91.png" width=50%>
+
+
 <img src="https://user-images.githubusercontent.com/66444859/225451906-ec2742a0-2c6a-45b1-816e-762c5c2e03b1.png" width=65%>
 
 In prevous classes we have added db instance code in our ```docker-compose.yaml```:
@@ -48,6 +52,9 @@ Start Postgres instance up  by running ```Compose Up``` to connect to RDS instan
 
 Connect to PostgreSQL:
 ```psql -Upostgres --host localhost```
+
+<img src="https://user-images.githubusercontent.com/66444859/226124360-954df8a0-4f7f-47a8-ac36-3151130698af.png" width=65%>
+
 
 Here are some common PSQL commands:
 ```
@@ -514,13 +521,13 @@ def query_wrap_array(template):
 
 First query is written successfully
 
-<img src="https://user-images.githubusercontent.com/66444859/226086946-ee1371b8-fa7b-4994-b644-75fbc92a2fc5.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/226086946-ee1371b8-fa7b-4994-b644-75fbc92a2fc5.png" width=65%>
 
-<img src="https://user-images.githubusercontent.com/66444859/226087205-82299b66-6584-4bba-bf7b-c3df021ffdd7.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/226087205-82299b66-6584-4bba-bf7b-c3df021ffdd7.png" width=65%>
 
 With proper query
 
-<img src="https://user-images.githubusercontent.com/66444859/226087307-892a82a3-b7b4-4639-807e-650893a3f194.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/226087307-892a82a3-b7b4-4639-807e-650893a3f194.png" width=65%>
 
 Frontend after adding query
 
