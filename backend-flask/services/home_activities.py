@@ -8,7 +8,6 @@ from lib.db import pool, query_wrap_array
 class HomeActivities:
   #def run(logger):
   def run(cognito_user_id=None):
-    print("--home-activities")
     #logger.info("HomeActivities")
     #with tracer.start_as_current_span("home-activites-mock-data"):
     #  span = trace.get_current_span()
