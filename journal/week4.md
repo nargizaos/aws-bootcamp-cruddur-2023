@@ -500,8 +500,9 @@ psycopg[pool]
 ```
 pip install -r requirements.txt
 ```
+### DB Object and Connection Pool
 
-```db.py```
+We'll create db object in  ```/lib/db.py```.
 
 ```
 def query_wrap_object(template):
@@ -529,12 +530,168 @@ With proper query
 
 <img src="https://user-images.githubusercontent.com/66444859/226087307-892a82a3-b7b4-4639-807e-650893a3f194.png" width=65%>
 
-Frontend after adding query
+We were able to connect to frontend after adding query
 
-<img src="https://user-images.githubusercontent.com/66444859/226087366-97f464b4-baea-4b08-8b26-62dc2f177ff0.png" width=50%>
+<img src="https://user-images.githubusercontent.com/66444859/226087366-97f464b4-baea-4b08-8b26-62dc2f177ff0.png" width=70%>
+
+### Connect Gitpod to RDS instance
+
+In order to connect to the RDS instance we need to provide our Gitpod IP and whitelist for inbound traffic on port 5432. To see the GitPods IP address run this command: 
+
+```
+GITPOD_IP=$(curl ifconfig.me)
+```
+
+We'll create an inbound rule for Postgres (5432) and provide the GITPOD ID.
+We'll get the security group rule id so we can easily modify it in the future from the terminal here in Gitpod.
+
+```
+export DB_SG_ID="sg-0b725ebab7e25635e"
+gp env DB_SG_ID="sg-0b725ebab7e25635e"
+export DB_SG_RULE_ID="sgr-070061bba156cfa88"
+gp env DB_SG_RULE_ID="sgr-070061bba156cfa88"
+```
+
+Whenever we need to update our security groups we can do this for access.
+
+```
+aws ec2 modify-security-group-rules \
+    --group-id $DB_SG_ID \
+    --security-group-rules "SecurityGroupRuleId=$DB_SG_RULE_ID,SecurityGroupRule={Description=GITPOD,IpProtocol=tcp,FromPort=5432,ToPort=5432,CidrIpv4=$GITPOD_IP/32}"
+```
+We don't want to run this command manually every time we re-launch GitPod, so we will put it in a sctipt in ```/db/rds-update-sg-rule```.
+
+We'll add a command step for postgres in ```gipod.yaml```: 
+
+```
+command: |
+  export GITPOD_IP=$(curl ifconfig.me)
+  source  "$THEIA_WORKSPACE_ROOT/backend-flask/bin/rds-update-sg-rule"
+```
+
+After re-launching GitPod workspace, we can see that the script created new Inbound Rule in RDS Security Group named "GITPOD"
+
+<img src="https://user-images.githubusercontent.com/66444859/227425434-d76eaa51-86be-4015-987b-8103bf874b4f.png" width=70%>
+
+https://docs.aws.amazon.com/cli/latest/reference/ec2/modify-security-group-rules.html#examples
+
+#### Test remote access
+
+We'll create a connection url:
+
+```
+postgresql://cruddurroot:yourpassword@cruddur-db-instance.czz1cuvepklc.us-east-1.rds.amazonaws.com:5433/cruddur
+```
+
+We'll test that it works in Gitpod:
+
+```
+psql postgresql://cruddurroot:yourpassword@cruddur-db-instance.czz1cuvepklc.us-east-1.rds.amazonaws.com:5433/cruddur
+```
+
+We'll update your URL for production use case
+
+```
+export PROD_CONNECTION_URL="postgresql://cruddurroot:rdspassword@cruddur-db-instance.czz1cuvepklc.us-east-1.rds.amazonaws.com:5433/cruddur"
+gp env PROD_CONNECTION_URL="postgresql://cruddurroot:rdspassword@cruddur-db-instance.czz1cuvepklc.us-east-1.rds.amazonaws.com:5433/cruddur"
+```
+
+<img src="https://user-images.githubusercontent.com/66444859/227426702-5e31ba92-46f1-45fc-9347-bcffd155e014.png" width=65%>
 
 
 
+### Setup Cognito post confirmation lambda
+
+Create the handler function from AWS Lambda Console Page. Create lambda in same VPC as RDS instance, function name ```cruddur-post-confirmation```,
+Runtime - Python 3.8.
+
+<img src="https://user-images.githubusercontent.com/66444859/227426845-4a49a846-5e27-4ba2-a40e-8e641bea9c4a.png" width=70%>
+
+
+ENV variables needed for the lambda environment.
+
+```
+PG_HOSTNAME='cruddur-db-instance.czuqvdoungei.us-east-1.rds.amazonaws.com'
+PG_DATABASE='cruddur'
+PG_USERNAME='cruddurroot'
+PG_PASSWORD='RDSpassword'
+```
+
+Insert the function in Lambda Code
+
+```
+import json
+import psycopg2
+
+def lambda_handler(event, context):
+    user = event['request']['userAttributes']
+    try:
+        conn = psycopg2.connect(
+            host=(os.getenv('PG_HOSTNAME')),
+            database=(os.getenv('PG_DATABASE')),
+            user=(os.getenv('PG_USERNAME')),
+            password=(os.getenv('PG_SECRET'))
+        )
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (display_name, handle, cognito_user_id) VALUES(%s, %s, %s)", (user['name'], user['email'], user['sub']))
+        conn.commit() 
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        
+    finally:
+        if conn is not None:
+            cur.close()
+            conn.close()
+            print('Database connection closed.')
+
+    return event
+```
+
+#### Development
+
+This is a custom compiled psycopg2 C library for Python. Due to AWS Lambda missing the required PostgreSQL libraries in the AMI image, we needed to compile psycopg2 with the PostgreSQL libpq.so library statically linked libpq library instead of the default dynamic link.
+
+We will add a layer for psycopg2 with easiest methods for development. 
+Some precompiled versions of this layer are available publicly on AWS freely to add to your function by ARN reference.
+https://github.com/jetbridge/psycopg2-lambda-layer
+
+Go to Layers + in the function console and add a reference for your region
+I will insert ARN for my region and Python 3.8 version:
+
+```arn:aws:lambda:us-east-1:898466741470:layer:psycopg2-py38:2```
+
+### Add the function to Cognito
+
+Under the user pool properties add the function as a ```Post Confirmation``` lambda trigger.
+
+<img src="https://user-images.githubusercontent.com/66444859/227428739-4f28a6e5-a902-4b46-befe-d4cf5b16cfe5.png" width=70%>
+
+<img src="https://user-images.githubusercontent.com/66444859/227428902-7575b818-ee72-43df-a1ed-6850a81b5fd7.png" width=70%>
+
+Create new Post Confirmation Role with a AWS Lambda AVC Execution Role policy which grants permissions to access and manage EC2 instances
+
+<img src="https://user-images.githubusercontent.com/66444859/227429580-411722b9-adcb-46c7-a5e0-4c7a0ec35ee0.png" width=65%>
+
+
+<img src="https://user-images.githubusercontent.com/66444859/227429436-012ada6e-4c6f-4d70-8df1-6b58f672cbce.png" width=70%>
+
+
+Add a Self-referencing Security Group where your RDS Instance is  into Inbound rules of Lambda Function to to allow traffic between instances that share
+the same security group, in our case to allow RDS and Lambda talk to each other. 
+
+
+### Create new activities with a database insert
+
+Was able to create new activities with a database insert
+
+<img src="https://user-images.githubusercontent.com/66444859/227440926-f29039f4-78ab-4e8a-bd3f-57f7298d1381.png" width=70%>
+
+
+<img src="https://user-images.githubusercontent.com/66444859/227440830-34089ad6-3e81-47b3-a206-6491cd18f373.png" width=70%>
+
+
+<img src="https://user-images.githubusercontent.com/66444859/227440711-f36e9f59-e4f7-4882-b899-96b233fbdfec.png" width=70%>
 
 
 
