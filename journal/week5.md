@@ -69,7 +69,7 @@ print(response)
 ```
 Run ```./bin/ddb/schema-load```
 
-Tabe was created
+Table was created
 
 <img src="https://user-images.githubusercontent.com/66444859/227675540-440f848a-9722-4a05-a570-6c4019393dad.png" width=85%>
 
@@ -705,6 +705,249 @@ Now we can see what's being passed in our queries.
 <img src="https://user-images.githubusercontent.com/66444859/227696572-36759836-f91c-4f2d-be6e-561258c67824.png" width=65%>
 
 <img src="https://user-images.githubusercontent.com/66444859/227696510-8bde55f6-b3a4-4d34-b4c9-f2812e7d926a.png" width=65%>
+
+### Implement (Pattern A) Listing Messages in Message Group into Application
+
+Create new file in ```/lib``` ```ddb.py```
+
+```
+import boto3
+import sys
+from datetime import datetime, timedelta, timezone
+import uuid
+import os
+
+class Ddb:
+  def client():
+    endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+    if endpoint_url:
+      attrs = { 'endpoint_url': endpoint_url }
+    else:
+      attrs = {}
+    dynamodb = boto3.client('dynamodb',**attrs)
+    return dynamodb
+
+  def list_message_groups(client,my_user_uuid):
+    table_name = 'cruddur-messages'
+    query_params = {
+      'TableName': table_name,
+      'KeyConditionExpression': 'pk = :pk',
+      'ScanIndexForward': False,
+      'Limit': 20,
+      'ExpressionAttributeValues': {
+        ':pk': {'S': f"GRP#{my_user_uuid}"}
+      }
+    }
+    print('query-params')
+    print(query_params)
+    print('client')
+    print(client)
+
+    # query the table
+    response = client.query(**query_params)
+    items = response['Items']
+    
+    results = []
+    for item in items:
+      last_sent_at = item['sk']['S']
+      results.append({
+        'uuid': item['message_group_uuid']['S'],
+        'display_name': item['user_display_name']['S'],
+        'handle': item['user_handle']['S'],
+        'message': item['message']['S'],
+        'created_at': last_sent_at
+      })
+    return results
+```
+
+Create new ```cognito``` folder inn ```bin``` directory. We will implement Cognito so that dynamodb will pick up our User ID from Cognito. 
+
+Command to list users from AWS CLI:
+
+```
+aws cognito-idp list-users --user-pool-id=us-east-1_sKlh00oHV
+```
+Export Cognito Envs:
+
+```
+export AWS_COGNITO_USER_POOL_ID=us-east-1_sKlh00oHV
+gp env AWS_COGNITO_USER_POOL_ID=us-east-1_sKlh00oHV
+```
+
+New file ```list-users```:
+
+```
+#!/usr/bin/env python3
+
+import boto3
+import os
+import json
+
+userpool_id = os.getenv("AWS_COGNITO_USER_POOL_ID")
+client = boto3.client('cognito-idp')
+params = {
+  'UserPoolId': userpool_id,
+  'AttributesToGet': [
+      'preferred_username',
+      'sub'
+  ]
+}
+response = client.list_users(**params)
+users = response['Users']
+
+print(json.dumps(users, sort_keys=True, indent=2, default=str))
+
+dict_users = {}
+for user in users:
+  attrs = user['Attributes']
+  sub    = next((a for a in attrs if a["Name"] == 'sub'), None)
+  handle = next((a for a in attrs if a["Name"] == 'preferred_username'), None)
+  dict_users[handle['Value']] = sub['Value']
+
+print(json.dumps(dict_users, sort_keys=True, indent=2, default=str))
+```
+
+https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp/client/list_users.html
+
+Run the script with ```./bin/cognito/list-users ```
+
+<img src="https://user-images.githubusercontent.com/66444859/228637019-4dd0f2ba-ed1b-4886-9c49-1762caae2350.png" width=65%>
+
+Next step is to create a new script to update User names in our database ```backend-flask/bin/db/update_cognito_user_ids```
+
+```
+#!/usr/bin/env python3
+
+import boto3
+import os
+import sys
+
+print("== db-update-cognito-user-ids")
+
+current_path = os.path.dirname(os.path.abspath(__file__))
+parent_path = os.path.abspath(os.path.join(current_path, '..', '..'))
+sys.path.append(parent_path)
+from lib.db import db
+
+def update_users_with_cognito_user_id(handle,sub):
+  sql = """
+    UPDATE public.users
+    SET cognito_user_id = %(sub)s
+    WHERE
+      users.handle = %(handle)s;
+  """
+  db.query_commit(sql,{
+    'handle' : handle,
+    'sub' : sub
+  })
+
+def get_cognito_user_ids():
+  userpool_id = os.getenv("AWS_COGNITO_USER_POOL_ID")
+  client = boto3.client('cognito-idp')
+  params = {
+    'UserPoolId': userpool_id,
+    'AttributesToGet': [
+        'preferred_username',
+        'sub'
+    ]
+  }
+  response = client.list_users(**params)
+  users = response['Users']
+  dict_users = {}
+  for user in users:
+    attrs = user['Attributes']
+    sub    = next((a for a in attrs if a["Name"] == 'sub'), None)
+    handle = next((a for a in attrs if a["Name"] == 'preferred_username'), None)
+    dict_users[handle['Value']] = sub['Value']
+  return dict_users
+
+
+users = get_cognito_user_ids()
+
+for handle, sub in users.items():
+  print('----',handle,sub)
+  update_users_with_cognito_user_id(
+    handle=handle,
+    sub=sub
+  )
+```
+
+Update ```setup``` script with:
+
+```
+source "$bin_path/db/update_cognito_user_ids"
+```
+
+We will bring up our database:
+
+```./bin/db/setup```
+
+We ran into ```import-im6.q16: unable to open X server `' @ error/import.c/ImportImageCommand/359.``` error. 
+
+<img src="https://user-images.githubusercontent.com/66444859/228638876-14fc775e-2d6c-4804-b7b4-783bd4acd661.png" width=65%>
+
+Looks like we forgot to make new file executable: ```chmod u+x ./bin/db/update_cognito_user_ids```.
+
+We are still having previuos error. We will try to execute ```./bin/db/update_cognito_user_ids``` separately. 
+
+<img src="https://user-images.githubusercontent.com/66444859/228639773-a37d7294-a332-4ea3-abe8-ed7ac7ebd100.png" width=65%>
+
+
+Update this line in ```/lib/db.py``` and run ```./bin/db/update_cognito_user_ids``` again.
+
+```
+self.print_sql('commit with returning',sql,params)
+```
+
+Now it's showing what exactly it's passing. 
+
+<img src="https://user-images.githubusercontent.com/66444859/228640709-855b6255-9d83-4b20-946c-628b0ddebe26.png" width=65%>
+
+But ```./bin/db/setup``` command is still not working. In ```/bin/db/setup``` change 
+
+```source "$bin_path/db/update_cognito_user_ids"``` to ```python "$bin_path/db/update_cognito_user_ids"```. 
+
+The error is caused by trying to run a Python script as a Bash script.
+
+Update ```message_groups.py```
+
+```
+from datetime import datetime, timedelta, timezone
+
+from lib.ddb import Ddb
+from lib.db import db
+
+class MessageGroups:
+  def run(cognito_user_id):
+    model = {
+      'errors': None,
+      'data': None
+    }
+
+    sql = db.template('users','uuid_from_cognito_user_id')
+    my_user_uuid = db.query_value(sql,{
+      'cognito_user_id': cognito_user_id
+    })
+
+    print(f"UUID: {my_user_uuid}")
+
+    ddb = Ddb.client()
+    data = Ddb.list_message_groups(ddb, my_user_uuid)
+    print("list_message_groups:",data)
+
+    model['data'] = data
+    return model
+```
+
+Update ```HomeFeedPage.js``` to update token
+
+```
+headers: {
+  Authorization: `Bearer ${localStorage.getItem("access_token")}`
+},
+```
+
+
 
 
 
