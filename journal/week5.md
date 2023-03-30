@@ -947,9 +947,51 @@ headers: {
 },
 ```
 
+Create ```CheckAuth.js``` in ```frontend/src/lib```:
+
+```
+import { Auth } from 'aws-amplify';
+
+const checkAuth = async (setUser) => {
+  Auth.currentAuthenticatedUser({
+    // Optional, By default is false. 
+    // If set to true, this call will send a 
+    // request to Cognito to get the latest user data
+    bypassCache: false 
+  })
+  .then((user) => {
+    console.log('user',user);
+    return Auth.currentAuthenticatedUser()
+  }).then((cognito_user) => {
+      setUser({
+        display_name: cognito_user.attributes.name,
+        handle: cognito_user.attributes.preferred_username
+      })
+  })
+  .catch((err) => console.log(err));
+};
+
+export default checkAuth;
+```
+
+```MessageGroups``` are not returning any data.
+
+<img src="https://user-images.githubusercontent.com/66444859/228963370-13733f45-ba07-4012-a718-b94e258148e2.png" width=65%>
 
 
+```
+./bin/ddb/schema-load 
+./bin/ddb/seed 
+```
 
+For me it's still showing error when I do inspect. But when I run ```./bin/ddb/patterns/list-conversations ``` it's showing list of conversations. We might have missed something in our queries. Let's look into our ```ddb.py```. 
 
+Looks like we didn't update ``` AWS_ENDPOINT_URL``` and we will update it now in ```docker-compose.yaml```:
+
+```
+ AWS_ENDPOINT_URL: "http://dynamodb-local:8000"
+ ```
+ 
+ 
 
 
