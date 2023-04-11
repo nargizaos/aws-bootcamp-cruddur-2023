@@ -35,6 +35,8 @@ class Ddb:
     items = response['Items']  
     print("items::", items)
   
+    items.reverse()
+    
     results = []
     for item in items:
       last_sent_at = item['sk']['S']
@@ -44,5 +46,34 @@ class Ddb:
         'handle': item['user_handle']['S'],
         'message': item['message']['S'],
         'created_at': last_sent_at
+      })
+    return results
+
+  def list_messages(client,message_group_uuid):
+    year = str(datetime.now().year)
+    table_name = 'cruddur-messages'
+    query_params = {
+      'TableName': table_name,
+      'KeyConditionExpression': 'pk = :pk AND begins_with(sk,:year)',
+      'ScanIndexForward': False,
+      'Limit': 20,
+      'ExpressionAttributeValues': {
+        ':year': {'S': year },
+        ':pk': {'S': f"MSG#{message_group_uuid}"}
+      }
+    }
+
+    response = client.query(**query_params)
+    items = response['Items']
+    
+    results = []
+    for item in items:
+      created_at = item['sk']['S']
+      results.append({
+        'uuid': item['message_uuid']['S'],
+        'display_name': item['user_display_name']['S'],
+        'handle': item['user_handle']['S'],
+        'message': item['message']['S'],
+        'created_at': created_at
       })
     return results
