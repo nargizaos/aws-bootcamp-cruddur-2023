@@ -34,8 +34,6 @@ class Ddb:
     response = client.query(**query_params)
     items = response['Items']  
     print("items::", items)
-  
-    items.reverse()
     
     results = []
     for item in items:
@@ -65,6 +63,7 @@ class Ddb:
 
     response = client.query(**query_params)
     items = response['Items']
+    items.reverse()
     
     results = []
     for item in items:
