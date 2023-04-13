@@ -34,8 +34,7 @@ export default function ActivityForm(props) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(json)
-        }),
-      });
+        });
       let data = await res.json();
       if (res.status === 200) {
         props.setMessages(current => [...current,data]);
