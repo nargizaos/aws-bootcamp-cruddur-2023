@@ -18,7 +18,7 @@ response = ddb.create_table(
     TableName = table_name,
     AttributeDefinitions=[
         {
-            'AttributeName': 'message_group_uuid',
+            'AttributeName': 'pk',
             'AttributeType': 'S'
         },
         {
