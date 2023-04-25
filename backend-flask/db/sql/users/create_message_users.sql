@@ -1,4 +1,3 @@
-
 SELECT 
   users.uuid,
   users.display_name,
