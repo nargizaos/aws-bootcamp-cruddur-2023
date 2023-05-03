@@ -317,7 +317,7 @@ dynamodb = boto3.client('dynamodb',**attrs)
 
 Create database
 
-```.
+```
 ./bin/db/create
 ./bin/db/schema-load
 ./bin/db/seed
@@ -395,6 +395,7 @@ def create_message_group(client,message_group_uuid, my_user_uuid, last_message_a
   )
   print(response)
 ```
+
 ```
 def create_message(client,message_group_uuid, created_at, message, my_user_uuid, my_user_display_name, my_user_handle):
   # Entity # Message Group Id
@@ -496,8 +497,6 @@ query_params = {
 
 # query the table
 response = dynamodb.query(**query_params)
-
-
 
 # print the items returned by the query
 print(json.dumps(response, sort_keys=True, indent=2))
@@ -656,7 +655,7 @@ print(json.dumps(response, sort_keys=True, indent=2))
 Get ```uuid``` from Postgres. 
 
 ```
-./bin/db/connec
+./bin/db/connect
 SELECT uuid, handle from users;
 ```
 
@@ -686,7 +685,7 @@ my_user_uuid = get_my_user_uuid()
 print(f"my-uuid:{my_user_uuid}")
 ```
 
-Add to ```/lib/db.py```
+Add to ```/lib/db.py```:
 
 ```
 def query_value(self,sql,params={}):
@@ -708,7 +707,7 @@ Now we can see what's being passed in our queries.
 
 ### Implement (Pattern A) Listing Messages in Message Group into Application
 
-Create new file in ```/lib``` ```ddb.py```
+Create new file in /lib/ ```/lib/ddb.py```
 
 ```
 import boto3
@@ -767,6 +766,7 @@ Command to list users from AWS CLI:
 ```
 aws cognito-idp list-users --user-pool-id=us-east-1_sKlh00oHV
 ```
+
 Export Cognito Envs:
 
 ```
@@ -992,6 +992,147 @@ Looks like we didn't update ``` AWS_ENDPOINT_URL``` and we will update it now in
  AWS_ENDPOINT_URL: "http://dynamodb-local:8000"
  ```
  
+ ### Implement (Pattern B) Listing Messages Group into Application
  
+ Updates in ```backend-flask/db/seed.sql```
+ 
+ Line 4: deleted ```Andrew Brown value and added my User Value/handle```
+ 
+ Line 12: 
+```(SELECT uuid from public.users WHERE users.handle = 'andrewbrown' LIMIT 1),``` >>> ```(SELECT uuid from public.users WHERE users.handle = 'nargizaosmon' LIMIT 1),```
+
+
+Updates in ```backend-flask/ddb/seed```
+
+```'my_handle': 'andrewbrown',``` >> ```'my_handle': 'nargizaosmon',```
+
+```my_user = next((item for item in users if item["handle"] == 'andrewbrown'), None)``` >>>
+```user = next((item for item in users if item["handle"] == 'nargizaosmon'), None)```
+
+Updates in ```backend-flask/ddb/patterns/list-conversations```
+
+'handle': 'andrewbrown' >>> 'handle': 'nargizaosmon'
+
+Here is the Message Group:
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236047144-f78d8e79-6bf3-4734-8c91-e809c0f16644.png">
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236047419-44aab8dc-41ed-4324-8030-fedb4fa47258.png">
+
+
+List of users in DB: 
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236047742-74c5e663-0881-4b6b-9295-bfce221edada.png">
+
+List of conversations: 
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236047812-7fab4c4d-4ac3-4e4b-aa9e-ec7d5ad7003d.png">
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236047952-2a02e973-b497-45dd-b854-0d32fbea9dad.png">
+
+
+### Create Message in existing Message Group
+
+In ```/backend-flask/bin/ddb/seed``` change time format from 
+
+```(now + timedelta(minutes=i)).isoformat()``` 
+to  ```(now + timedelta(hours=-3) + timedelta(minutes=i)).isoformat()```
+
+After changing you will have to drop and recreate the ddb table: 
+```
+1) ./bin/ddb/drop cruddur-messages 
+2) ./bin/ddb/schema-load
+3)./bin/ddb/seed 
+```
+and make sure you do not get any errors when running this binaries.
+
+Create ```/backend-flask/db/sql/users/create_message_users.sql```
+
+```
+SELECT 
+  users.uuid,
+  users.display_name,
+  users.handle,
+  CASE users.cognito_user_id = %(cognito_user_id)s
+  WHEN TRUE THEN
+    'sender'
+  WHEN FALSE THEN
+    'recv'
+  ELSE
+    'other'
+  END as kind
+FROM public.users
+WHERE
+  users.cognito_user_id = %(cognito_user_id)s
+  OR 
+  users.handle = %(user_receiver_handle)s
+```
+
+Open Message Group and try sending a message. Message was sent successfully.
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236049377-2ff4bf03-121f-4e52-97cc-f006d34ddcaa.png">
+
+
+### Implement Conversations with DynamoDB - Create New Conversation - Pattern C 
+
+Add new path in App.js in frontend-react
+
+```
+{
+  path: "/messages/new/:handle",
+  element: <MessageGroupNewPage />
+},
+```
+
+And add new import:
+
+```import MessageGroupNewPage from './pages/MessageGroupNewPage';```
+
+
+In ```frontend-react-js/pages``` create new file for new Message Group ```MessageGroupNewPage.js``` [see content here](https://github.com/nargiza777/aws-bootcamp-cruddur-2023/blob/main/frontend-react-js/src/pages/MessageGroupNewPage.js)
+
+
+Add new User in our seed data ```backend-flask/db/seed.sql```
+
+```('Londo Mollari', 'lmollari@centari.com', 'londo' ,'MOCK');```
+
+Connect to database and insert Londo user:
+
+```
+./bin/db/connect
+INSERT INTO public.users (display_name, email, handle, cognito_user_id) VALUES ('Londo Mollari', 'lmollari@centari.com', 'londo' ,'MOCK');
+```
+
+<img width="950" alt="image" src="https://user-images.githubusercontent.com/66444859/236051747-2d116c34-fa18-49b9-8b77-0035eb45d399.png">
+
+We need to create API Endpoint for params. Add this to ```backend-flask/app.py```
+
+```
+from services.users_short import *
+
+@app.route("/api/users/@<string:handle>/short", methods=['GET'])
+def data_users_short(handle):
+data = UsersShort.run(handle)
+return data, 200
+```
+
+Create new file backend-flask/services/user_short.py ([code](https://github.com/nargiza777/aws-bootcamp-cruddur-2023/blob/main/backend-flask/services/users_short.py))
+
+Create new file ```backend-flask/db/sql/users/short.sql```
+
+```
+SELECT
+  users.uuid,
+  users.handle,
+  users.display_name
+FROM public.users
+WHERE 
+  users.handle = %(handle)s
+```
+
+Create new file for New Item in Message Groups ```frontend-react-js/src/components/MessageGroupNewItem.js``` ([code](https://github.com/nargiza777/aws-bootcamp-cruddur-2023/blob/main/frontend-react-js/src/components/MessageGroupNewItem.js))
+
+
+
 
 
