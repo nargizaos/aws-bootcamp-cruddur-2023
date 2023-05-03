@@ -1133,6 +1133,136 @@ WHERE
 Create new file for New Item in Message Groups ```frontend-react-js/src/components/MessageGroupNewItem.js``` ([code](https://github.com/nargiza777/aws-bootcamp-cruddur-2023/blob/main/frontend-react-js/src/components/MessageGroupNewItem.js))
 
 
+Update ```frontend-react-js/src/components/MessageGroupFeed.js```
+
+```
+import MessageGroupNewItem from './MessageGroupNewItem';
+
+let message_group_new_item;
+if (props.otherUser) {
+  message_group_new_item = <MessageGroupNewItem user={props.otherUser} />
+}
+```
+
+Open Messages with new endpoint ```/messages/new/londo```, send a message in the message group and it will create and redirect to new enpoint. 
+
+Message Group with Londo was created and I was able to send a message:
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236054223-7e481c4e-9436-46f7-8bcf-2f493a579fb8.png">
+
+### Implement (Pattern E) Updating a Message Group using DynamoDB Streams
+
+DynamoDB Stream trigger to update message groups:
+
+	• create a VPC endpoint for dynamoDB service on your VPC
+	• create a Python lambda function in your vpc
+	• enable streams on the table with 'new image' attributes included
+	• add your function as a trigger on the stream
+	• grant the lambda IAM role permission to read the DynamoDB stream events ```AWSLambdaInvocation-DynamoDB```
+	• grant the lambda IAM role permission to update table items
+	• add your function as a trigger on the stream
 
 
+In order to do that we need to get our data onto DynamoDB and have to create a real table. 
+Create a table with command: ``` ./bin/ddb/schema-load prod```
 
+<img width="950" alt="image" src="https://user-images.githubusercontent.com/66444859/236054934-16575f22-e3b2-4a31-ae31-df8e53ab957b.png">
+
+<img width="950" alt="image" src="https://user-images.githubusercontent.com/66444859/236054968-832822bb-e599-430d-befa-fa24cda34136.png">
+
+
+Enable streams on the table with 'new image' attributes included
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236055397-6dc81d27-f448-4f83-95a0-edcaa7a7eab4.png">
+
+<img width="750" alt="image" src="https://user-images.githubusercontent.com/66444859/236055457-94f828e1-f795-4a0c-97e2-09acc15bb8e7.png">
+
+Create a VPC endpoint for DynamoDB service on your VPC
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236055746-62a3860e-681e-4f5f-b608-afd24e69fcca.png">
+
+Create a Python Lambda function in your VPC
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236056114-dcec45d9-fc0b-4b4d-a0d5-24a5e073fe52.png">
+
+Attach a Policy
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236056189-d34b2bde-335e-4854-af47-8fab1bb82602.png">
+
+<img width="650" alt="image" src="https://user-images.githubusercontent.com/66444859/236056668-15d66da8-2ff1-4f16-bb4b-2240667c0612.png">
+
+
+Go to ```/backend-flask/bin/ddb/schema-load``` and add this: 
+
+```
+{
+'AttributeName': 'message_group_uuid',
+'AttributeType': 'S'
+},
+```
+
+Delete DynamoDB table and recreate with ``` ./bin/ddb/schema-load```
+We got this error even DynamoDB table was deleted. 
+We were missing "prod" in our command: ```./bin/ddb/schema-load prod```
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236057530-98358f7f-1c01-414b-a75d-8d5060c8c760.png">
+
+Table was created:
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236057590-189ccabf-5c52-45b5-8aed-fbe0cc3975ad.png">
+
+Turn on the streams again on the Table.
+
+#### Setup a Trigger in DynamoDB
+
+<img width="450" alt="image" src="https://user-images.githubusercontent.com/66444859/236057694-bd75ae25-c031-4b9d-b186-c420cf8feb53.png">
+
+<img width="450" alt="image" src="https://user-images.githubusercontent.com/66444859/236057729-56536130-eef8-49ef-a37f-96b684ad99b8.png">
+
+#### Now we need to hook up our application to use Prod stuff.
+
+In our Docker compose we have ```AWS_ENDPOINT_URL```, all we have to do is to use Prod - comment out ```#AWS_ENDPOINT_URL: "http://dynamodb-local:8000"``` and Compose UP.
+
+
+Open Frontend > Messages - we don't have anything because this is now production.
+
+<img width="600" alt="image" src="https://user-images.githubusercontent.com/66444859/236057965-859c4e56-bef0-4fc9-b037-61d46a18b65e.png">
+
+Open https://3000-nargiza777-awsbootcampc-lv2wa4e4n4s.ws-us96.gitpod.io/messages/new/bayko 
+
+Sent a message, but it created two Message Groups: 
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236058134-5c7779ac-7527-4a84-be10-7c8ee8c86c86.png">
+
+Go to Lambda > Functions > cruddur-messaging-stream > Monitors > Logs
+
+Logs were created 
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236058279-c578b9a3-f04a-48a3-979c-9722e6a57a18.png">
+
+In Cruddur-messaging-stream > Configuration>  Roles > Add permissions > Attach Policy > AmazonDynamoDBFullAccess. After adding DynamoDBFullAccess policy we were still getting error in cruddur-stream logs, so we added Permissions manually 
+
+<img width="272" alt="image" src="https://user-images.githubusercontent.com/66444859/236059631-a5b37cfd-5a5b-48ec-9d4d-b88970c6a21c.png">
+
+Sent message to Londo:
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236059749-51275034-ea42-4e5c-b5bf-2d747869f2d7.png">
+
+Open logs for /aws/lambda/cruddur-messaging-stream. Logs are showing some errors.
+Update our Lambda code by adding print('event-data', event)  to see the errors and Deploy code again. 
+We are getting this error: 
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236059875-bf588ee9-7eab-4e04-9f16-812b694f7fcf.png">
+
+<img width="850" alt="image" src="https://user-images.githubusercontent.com/66444859/236058279-c578b9a3-f04a-48a3-979c-9722e6a57a18.png">
+
+Add this to our Lambda function:
+
+```
+  eventName = event['Records'][0]['eventName']
+  if (eventName == 'REMOVE'):
+    print('skip REMOVE event')
+    return
+```
+
+Now we don't see any error in logs. Done with DynamoDB streams. 
